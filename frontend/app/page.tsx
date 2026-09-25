@@ -14,6 +14,10 @@ export default function HomePage() {
       >
         Skapa konto
       </Link>
+      {/* Del 6: synlig ändring som bevisar att nya versionen deployats automatiskt */}
+      <p className="mt-6 block w-fit rounded-full bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
+        🚀 Den här versionen deployades automatiskt med GitHub Actions
+      </p>
     </section>
   );
 }
