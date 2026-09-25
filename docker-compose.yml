@@ -39,8 +39,9 @@ services:
       MYSQL_USER: bank_app
       MYSQL_PASSWORD: bank_password
     ports:
-      # Bara för att kunna titta i databasen från den egna datorn (localhost:3307)
-      - "127.0.0.1:3307:3306"
+      # Bara för att kunna titta i databasen från den egna datorn (localhost:3307).
+      # På servern sätts MYSQL_PORT i .env så att porten inte krockar med andra projekt.
+      - "${MYSQL_PORT:-127.0.0.1:3307}:3306"
     volumes:
       - mysql-data:/var/lib/mysql
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
