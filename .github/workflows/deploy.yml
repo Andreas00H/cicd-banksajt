@@ -1,7 +1,7 @@
 # CI/CD för banksajten.
 # Körs vid push till main och vid pull requests mot main.
-# Del 1: kontrollera frontend (Next.js) och backend (Express).
-# Deploy-jobbet till EC2 läggs till i ett senare steg.
+# 1. Kontrollera frontend (Next.js) och backend (Express).
+# 2. Om båda klarar sig och det är en push till main: deploya till EC2.
 
 name: CI/CD
 
@@ -65,3 +65,33 @@ jobs:
         run: |
           node --check server.js
           node --check db.js
+
+  deploy:
+    name: Deploy till EC2
+    # Startar bara om BÅDA kontrollerna ovan lyckades
+    needs: [frontend, backend]
+    # Deploya bara vid push till main, aldrig vid pull requests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Bara en deploy åt gången. En ny push väntar tills den förra är klar.
+    concurrency:
+      group: deploy-ec2
+      cancel-in-progress: false
+
+    steps:
+      - name: Deploy med Docker Compose på EC2
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          # Next.js-bygget tar några minuter på servern
+          command_timeout: 30m
+          script: |
+            set -e
+            cd /home/ubuntu/cicd-banksajt
+            git pull
+            sudo docker compose up -d --build
+            sudo docker image prune -f
+            sudo docker compose ps
