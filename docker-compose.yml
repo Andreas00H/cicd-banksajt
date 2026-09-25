@@ -1,0 +1,60 @@
+services:
+  # Next.js – det enda som syns utåt. Anropar backend inuti Docker-nätverket.
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        BACKEND_URL: http://backend:3001
+    environment:
+      BACKEND_URL: http://backend:3001
+    ports:
+      # Lokalt: http://localhost:3000. På servern sätts FRONTEND_PORT i en .env-fil.
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Express – nås bara av frontend, via namnet "backend"
+  backend:
+    build:
+      context: ./backend
+    environment:
+      PORT: 3001
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: bank_app
+      DB_PASSWORD: bank_password
+      DB_NAME: bank
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # MySQL – datan sparas i en volym så att den finns kvar mellan omstarter
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: bank
+      MYSQL_USER: bank_app
+      MYSQL_PASSWORD: bank_password
+    ports:
+      # Bara för att kunna titta i databasen från den egna datorn (localhost:3307)
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD} --silent",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
