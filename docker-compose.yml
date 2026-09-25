@@ -7,6 +7,8 @@ services:
         BACKEND_URL: http://backend:3001
     environment:
       BACKEND_URL: http://backend:3001
+      # VG: feature flag för Sparmål. Sätts i .env på servern. Standard = av (false).
+      FEATURE_SAVINGS: ${FEATURE_SAVINGS:-false}
     ports:
       # Lokalt: http://localhost:3000. På servern sätts FRONTEND_PORT i en .env-fil.
       - "${FRONTEND_PORT:-3000}:3000"
